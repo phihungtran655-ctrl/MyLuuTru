@@ -744,7 +744,7 @@ end)
 local settingsPage = createTab("Settings")
 
 createButton(settingsPage, "Destroy Gui (Xoá Menu)", function()
-    fovCircle:Remove()
+    fovCircle:Destroy()
     ScreenGui:Destroy()
 end)
 
