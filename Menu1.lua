@@ -688,14 +688,24 @@ local function getTargetPart(player, partName)
     return char:FindFirstChild("Head")
 end
 
-local function isPartVisible(part)
+local function isPartVisible(targetPart, targetCharacter)
+    local localCharacter = LocalPlayer.Character
+    if not localCharacter or not targetPart then return false end
+    
     local camera = workspace.CurrentCamera
     local origin = camera.CFrame.Position
-    local direction = (part.Position - origin).Unit * (part.Position - origin).Magnitude
+    local destination = targetPart.Position
+    local direction = destination - origin
+    
     local raycastParams = RaycastParams.new()
-    raycastParams.FilterDirectionArray = {LocalPlayer.Character, part.Parent}
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-
+    
+    local ignoreList = {localCharacter, camera}
+    if targetCharacter then
+        table.insert(ignoreList, targetCharacter)
+    end
+    raycastParams.FilterDescendantsInstances = ignoreList
+    
     local result = workspace:Raycast(origin, direction, raycastParams)
     return result == nil
 end
@@ -722,7 +732,7 @@ RunService.RenderStepped:Connect(function()
                     if onScreen then
                         local distance = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
                         if distance <= shortestDistance then
-                            if not wallCheck or isPartVisible(targetPart) then
+                            if not wallCheck or isPartVisible(targetPart, p.Character) then
                                 closestTarget = targetPart
                                 shortestDistance = distance
                             end
