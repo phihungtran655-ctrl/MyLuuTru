@@ -441,7 +441,11 @@ end)
 -- ==========================================
 local visualsPage = createTab("Visuals")
 
-local espConnection = nil
+-- ================================================
+-- HỆ THỐNG ESP (GỒM HIGHLIGHT VÀ NAME)
+-- ================================================
+
+-- 1. HAM TAO ESP HIGHLIGHT (VIEN TEAM)
 local function applyESP(v)
     if v ~= LocalPlayer and v.Character and not v.Character:FindFirstChild("ESPHighlight") then
         local hl = Instance.new("Highlight")
@@ -457,13 +461,36 @@ end
 
 createToggle(visualsPage, "ESP Highlight (Viền Team)", function(active)
     if active then
-        for _, v in pairs(Players:GetPlayers()) do applyESP(v) end
-        espConnection = Players.PlayerAdded:Connect(function(v)
-            v.CharacterAdded:Connect(function() task.wait(0.5) applyESP(v) end)
-        end)
+        getgenv().ESPConnections = {}
+        getgenv().IsHighlightActive = true
+
+        local function setupPlayer(v)
+            if v == LocalPlayer then return end
+            applyESP(v)
+            local conn = v.CharacterAdded:Connect(function()
+                task.wait(0.5)
+                if getgenv().IsHighlightActive then
+                    applyESP(v)
+                end
+            end)
+            table.insert(getgenv().ESPConnections, conn)
+        end
+
+        for _, v in ipairs(Players:GetPlayers()) do
+            setupPlayer(v)
+        end
+
+        local playerAddedConn = Players.PlayerAdded:Connect(setupPlayer)
+        table.insert(getgenv().ESPConnections, playerAddedConn)
     else
-        if espConnection then espConnection:Disconnect() espConnection = nil end
-        for _, v in pairs(Players:GetPlayers()) do
+        getgenv().IsHighlightActive = false
+        if getgenv().ESPConnections then
+            for _, conn in ipairs(getgenv().ESPConnections) do
+                conn:Disconnect()
+            end
+            getgenv().ESPConnections = nil
+        end
+        for _, v in ipairs(Players:GetPlayers()) do
             if v.Character and v.Character:FindFirstChild("ESPHighlight") then
                 v.Character.ESPHighlight:Destroy()
             end
@@ -471,7 +498,8 @@ createToggle(visualsPage, "ESP Highlight (Viền Team)", function(active)
     end
 end)
 
-local nameConnection = nil
+
+-- 2. HAM TAO ESP NAME (HIEN TEN)
 local function applyNameESP(v)
     if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Head") and not v.Character.Head:FindFirstChild("ESPName") then
         local bg = Instance.new("BillboardGui")
@@ -495,13 +523,36 @@ end
 
 createToggle(visualsPage, "ESP Name (Hiện Tên)", function(active)
     if active then
-        for _, v in pairs(Players:GetPlayers()) do applyNameESP(v) end
-        nameConnection = Players.PlayerAdded:Connect(function(v)
-            v.CharacterAdded:Connect(function() task.wait(0.5) applyNameESP(v) end)
-        end)
+        getgenv().NameConnections = {}
+        getgenv().IsNameActive = true
+
+        local function setupPlayerName(v)
+            if v == LocalPlayer then return end
+            applyNameESP(v)
+            local conn = v.CharacterAdded:Connect(function()
+                task.wait(0.5)
+                if getgenv().IsNameActive then
+                    applyNameESP(v)
+                end
+            end)
+            table.insert(getgenv().NameConnections, conn)
+        end
+
+        for _, v in ipairs(Players:GetPlayers()) do
+            setupPlayerName(v)
+        end
+
+        local playerAddedConn = Players.PlayerAdded:Connect(setupPlayerName)
+        table.insert(getgenv().NameConnections, playerAddedConn)
     else
-        if nameConnection then nameConnection:Disconnect() nameConnection = nil end
-        for _, v in pairs(Players:GetPlayers()) do
+        getgenv().IsNameActive = false
+        if getgenv().NameConnections then
+            for _, conn in ipairs(getgenv().NameConnections) do
+                conn:Disconnect()
+            end
+            getgenv().NameConnections = nil
+        end
+        for _, v in ipairs(Players:GetPlayers()) do
             if v.Character and v.Character:FindFirstChild("Head") and v.Character.Head:FindFirstChild("ESPName") then
                 v.Character.Head.ESPName:Destroy()
             end
