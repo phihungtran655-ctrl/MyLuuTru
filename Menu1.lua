@@ -881,14 +881,14 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================================================
--- NGĂN: TARGET (ĐÃ FIX LỖI NHẢY CAMERA RANDOM)
+-- NGĂN: TARGET (THÊM ESP BOX MÀU ĐỎ)
 -- ================================================
 local targetPage = createTab("Target")
 
 local targetBox = createTextBox(targetPage, "Nhập Tên / random", function() end)
 local lockedTarget = nil
 
--- Hàm tìm target (dùng cho Teleport hoặc tìm tên cụ thể)
+-- Hàm tìm target (dùng cho Teleport hoặc tên cụ thể)
 local function getTarget()
     local text = string.lower(targetBox.Text or "")
     text = text:gsub("^%s*(.-)%s*$", "%1")
@@ -933,15 +933,14 @@ createButton(targetPage, "Teleport đến Target", function()
     end
 end)
 
--- 2. Toggle View (Cố định 1 người duy nhất suốt quá trình bật, không bị giật)
+-- 2. Toggle View Target
 local viewConn = nil
-local viewingTarget = nil -- Biến riêng cố định target cho View
+local viewingTarget = nil
 
 createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
     if viewConn then viewConn:Disconnect() viewConn = nil end
 
     if active then
-        -- Chốt cố định 1 target duy nhất ngay khi bật Toggle
         local text = string.lower(targetBox.Text or "")
         text = text:gsub("^%s*(.-)%s*$", "%1")
         
@@ -955,7 +954,6 @@ createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
             viewingTarget = getTarget()
         end
 
-        -- Vòng lặp chỉ việc bám theo viewingTarget cố định, không gọi random nữa
         viewConn = game:GetService("RunService").RenderStepped:Connect(function()
             if viewingTarget and viewingTarget.Character and viewingTarget.Character:FindFirstChild("Humanoid") then
                 workspace.CurrentCamera.CameraSubject = viewingTarget.Character.Humanoid
@@ -970,6 +968,63 @@ createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
         end
+    end
+end)
+
+-- 3. Toggle ESP Box Target (Màu đỏ định vị)
+local espConn = nil
+local espTarget = nil
+local currentHighlight = nil
+
+-- Hàm xóa khung đỏ
+local function removeHighlight()
+    if currentHighlight then
+        currentHighlight:Destroy()
+        currentHighlight = nil
+    end
+end
+
+createToggle(targetPage, "ESP Target (Hộp đỏ)", function(active)
+    if espConn then espConn:Disconnect() espConn = nil end
+    removeHighlight()
+
+    if active then
+        local text = string.lower(targetBox.Text or "")
+        text = text:gsub("^%s*(.-)%s*$", "%1")
+
+        -- Mỗi lần bật Toggle sẽ chốt 1 người ngẫu nhiên mới (nếu gõ random)
+        if text == "random" then
+            local others = {}
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then table.insert(others, p) end
+            end
+            espTarget = #others > 0 and others[math.random(1, #others)] or nil
+        else
+            espTarget = getTarget()
+        end
+
+        -- Vòng lặp cập nhật vị trí hộp ESP đỏ
+        espConn = game:GetService("RunService").RenderStepped:Connect(function()
+            if espTarget and espTarget.Character then
+                if not currentHighlight or currentHighlight.Parent ~= espTarget.Character then
+                    removeHighlight()
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "TargetESP_Box"
+                    hl.FillColor = Color3.fromRGB(255, 0, 0) -- Màu đỏ trong
+                    hl.FillTransparency = 0.5
+                    hl.OutlineColor = Color3.fromRGB(255, 0, 0) -- Viền đỏ đậm
+                    hl.OutlineTransparency = 0
+                    hl.Adornee = espTarget.Character
+                    hl.Parent = espTarget.Character
+                    currentHighlight = hl
+                end
+            else
+                removeHighlight()
+            end
+        end)
+    else
+        espTarget = nil
+        removeHighlight()
     end
 end)
 
