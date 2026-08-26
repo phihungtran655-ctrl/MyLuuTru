@@ -971,28 +971,28 @@ createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
     end
 end)
 
--- 3. Toggle ESP Box Target (Màu đỏ định vị)
+-- 3. Toggle ESP Box Target (Hộp đỏ chuẩn SelectionBox)
 local espConn = nil
 local espTarget = nil
-local currentHighlight = nil
+local currentBox = nil
 
--- Hàm xóa khung đỏ
-local function removeHighlight()
-    if currentHighlight then
-        currentHighlight:Destroy()
-        currentHighlight = nil
+-- Hàm xóa hộp đỏ
+local function removeBox()
+    if currentBox then
+        currentBox:Destroy()
+        currentBox = nil
     end
 end
 
 createToggle(targetPage, "ESP Target (Hộp đỏ)", function(active)
     if espConn then espConn:Disconnect() espConn = nil end
-    removeHighlight()
+    removeBox()
 
     if active then
         local text = string.lower(targetBox.Text or "")
         text = text:gsub("^%s*(.-)%s*$", "%1")
 
-        -- Mỗi lần bật Toggle sẽ chốt 1 người ngẫu nhiên mới (nếu gõ random)
+        -- Chọn 1 người ngẫu nhiên nếu gõ random
         if text == "random" then
             local others = {}
             for _, p in ipairs(Players:GetPlayers()) do
@@ -1003,28 +1003,26 @@ createToggle(targetPage, "ESP Target (Hộp đỏ)", function(active)
             espTarget = getTarget()
         end
 
-        -- Vòng lặp cập nhật vị trí hộp ESP đỏ
+        -- Vòng lặp bám theo tạo Hộp đỏ
         espConn = game:GetService("RunService").RenderStepped:Connect(function()
             if espTarget and espTarget.Character then
-                if not currentHighlight or currentHighlight.Parent ~= espTarget.Character then
-                    removeHighlight()
-                    local hl = Instance.new("Highlight")
-                    hl.Name = "TargetESP_Box"
-                    hl.FillColor = Color3.fromRGB(255, 0, 0) -- Màu đỏ trong
-                    hl.FillTransparency = 0.5
-                    hl.OutlineColor = Color3.fromRGB(255, 0, 0) -- Viền đỏ đậm
-                    hl.OutlineTransparency = 0
-                    hl.Adornee = espTarget.Character
-                    hl.Parent = espTarget.Character
-                    currentHighlight = hl
+                if not currentBox or currentBox.Parent ~= espTarget.Character then
+                    removeBox()
+                    local box = Instance.new("SelectionBox")
+                    box.Name = "TargetESP_SelectionBox"
+                    box.Color3 = Color3.fromRGB(255, 0, 0) -- Màu đỏ tươi
+                    box.LineThickness = 0.05 -- Độ dày nét hộp
+                    box.Adornee = espTarget.Character
+                    box.Parent = espTarget.Character
+                    currentBox = box
                 end
             else
-                removeHighlight()
+                removeBox()
             end
         end)
     else
         espTarget = nil
-        removeHighlight()
+        removeBox()
     end
 end)
 
