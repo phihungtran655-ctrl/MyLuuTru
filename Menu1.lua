@@ -367,7 +367,7 @@ createToggle(movePage, "Infinite Jump", function(active)
     end
 end)
 
--- Fly (Bay theo Joystick & Hướng nhìn Camera)
+-- Fly (Bay kiểu Admin Real)
 local flySpeedBox = createTextBox(movePage, "Nhập tốc độ bay (VD: 50)...")
 local isFlying = false
 local flyConnection = nil
@@ -382,7 +382,12 @@ createToggle(movePage, "Toggle Fly (Bay)", function(active)
     local camera = workspace.CurrentCamera
 
     if isFlying and hrp and hum then
-        -- Tạo lực bay và xoay nhân vật
+        -- 1. CHUYỂN TRẠNG THÁI "ĐÓNG BĂNG" NHÂN VẬT (Admin Style)
+        hum.PlatformStand = true -- Giúp nhân vật không bị vấp ngã khi va chạm
+        task.wait() -- Đợi một xíu cho chắc
+        hum:ChangeState(Enum.HumanoidStateType.Physics) -- Ép trạng thái cứng
+
+        -- 2. Tạo lực bay và xoay nhân vật (như cũ)
         flyBodyVel = Instance.new("BodyVelocity")
         flyBodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
         flyBodyVel.Velocity = Vector3.zero
@@ -397,6 +402,11 @@ createToggle(movePage, "Toggle Fly (Bay)", function(active)
         flyConnection = RunService.RenderStepped:Connect(function()
             if not isFlying or not hrp or not hum then return end
             
+            -- Ép trạng thái liên tục để chắc chắn nhân vật không tự động đổi tư thế
+            if hum:GetState() ~= Enum.HumanoidStateType.Physics then
+                hum:ChangeState(Enum.HumanoidStateType.Physics)
+            end
+
             -- Xoay nhân vật theo hướng nhìn của Camera
             flyBodyGyro.CFrame = camera.CFrame
             
@@ -414,7 +424,12 @@ createToggle(movePage, "Toggle Fly (Bay)", function(active)
             end
         end)
     else
-        -- Dọn dẹp khi tắt Fly
+        -- 3. DỌN DẸP VÀ KHÔI PHỤC KHI TẮT FLY
+        if hum then
+            hum.PlatformStand = false
+            hum:ChangeState(Enum.HumanoidStateType.Running) -- Trả về trạng thái chạy bình thường
+        end
+
         if flyConnection then flyConnection:Disconnect() flyConnection = nil end
         if flyBodyVel then flyBodyVel:Destroy() flyBodyVel = nil end
         if flyBodyGyro then flyBodyGyro:Destroy() flyBodyGyro = nil end
