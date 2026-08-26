@@ -971,7 +971,7 @@ createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
     end
 end)
 
--- 3. Toggle ESP Box Target (Đã fix lag + hiện xuyên tường chuẩn)
+-- 3. Toggle ESP Box Target (Dùng BoxHandleAdornment chuẩn xuyên tường)
 local espConn = nil
 local currentBox = nil
 
@@ -1001,22 +1001,23 @@ createToggle(targetPage, "ESP Target (Hộp đỏ)", function(active)
             espTarget = getTarget()
         end
 
-        -- Nếu tìm thấy target, tạo duy nhất 1 Box đỏ gắn vào HumanoidRootPart
         if espTarget and espTarget.Character then
             local root = espTarget.Character:FindFirstChild("HumanoidRootPart") or espTarget.Character.PrimaryPart
             if root then
-                local box = Instance.new("SelectionBox")
+                -- Tạo BoxHandleAdornment (chuyên dụng vẽ hộp 3D đè lên mọi thứ)
+                local box = Instance.new("BoxHandleAdornment")
                 box.Name = "TargetESP_Box"
-                box.Color3 = Color3.fromRGB(255, 0, 0)
-                box.LineThickness = 0.05
-                box.AlwaysOnTop = true
-                box.Adornee = root -- Gắn trực tiếp vào Part chính của nhân vật
+                box.Color3 = Color3.fromRGB(255, 0, 0) -- Màu đỏ
+                box.Size = Vector3.new(4, 6, 4) -- Kích thước vừa vặn bao quanh nhân vật
+                box.AlwaysOnTop = true -- Luôn hiện xuyên tường 100%
+                box.ZIndex = 10
+                box.Transparency = 0.4 -- Độ trong suốt (0.4 để vẫn nhìn thấy nhân vật bên trong)
+                box.Adornee = root
                 box.Parent = root
                 currentBox = box
             end
         end
 
-        -- Vòng lặp chỉ dùng để kiểm tra nếu Target chết hoặc thoát game thì xóa Box (không tạo lại liên tục)
         espConn = game:GetService("RunService").RenderStepped:Connect(function()
             if not espTarget or not espTarget.Character or not espTarget.Character:FindFirstChild("HumanoidRootPart") then
                 removeBox()
