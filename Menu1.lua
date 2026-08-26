@@ -367,6 +367,60 @@ createToggle(movePage, "Infinite Jump", function(active)
     end
 end)
 
+-- Fly (Bay theo Joystick & Hướng nhìn Camera)
+local flySpeedBox = createTextBox(movePage, "Nhập tốc độ bay (VD: 50)...")
+local isFlying = false
+local flyConnection = nil
+local flyBodyVel = nil
+local flyBodyGyro = nil
+
+createToggle(movePage, "Toggle Fly (Bay)", function(active)
+    isFlying = active
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local camera = workspace.CurrentCamera
+
+    if isFlying and hrp and hum then
+        -- Tạo lực bay và xoay nhân vật
+        flyBodyVel = Instance.new("BodyVelocity")
+        flyBodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        flyBodyVel.Velocity = Vector3.zero
+        flyBodyVel.Parent = hrp
+
+        flyBodyGyro = Instance.new("BodyGyro")
+        flyBodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+        flyBodyGyro.CFrame = camera.CFrame
+        flyBodyGyro.Parent = hrp
+
+        -- Vòng lặp cập nhật di chuyển liên tục theo Joystick và Camera
+        flyConnection = RunService.RenderStepped:Connect(function()
+            if not isFlying or not hrp or not hum then return end
+            
+            -- Xoay nhân vật theo hướng nhìn của Camera
+            flyBodyGyro.CFrame = camera.CFrame
+            
+            -- Lấy hướng di chuyển từ Joystick mặc định của Roblox
+            local moveDir = hum.MoveDirection
+            local speed = tonumber(flySpeedBox.Text) or 50
+            
+            if moveDir.Magnitude > 0 then
+                -- Bay theo hướng Joystick hướng tới dựa trên góc nhìn Camera
+                local flyDir = (camera.CFrame.Rotation * moveDir).Unit
+                flyBodyVel.Velocity = flyDir * speed
+            else
+                -- Đứng yên trên không khi thả Joystick
+                flyBodyVel.Velocity = Vector3.zero
+            end
+        end)
+    else
+        -- Dọn dẹp khi tắt Fly
+        if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+        if flyBodyVel then flyBodyVel:Destroy() flyBodyVel = nil end
+        if flyBodyGyro then flyBodyGyro:Destroy() flyBodyGyro = nil end
+    end
+end)
+
 -- ==========================================
 -- NGĂN 2: VISUALS
 -- ==========================================
