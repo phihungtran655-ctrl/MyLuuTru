@@ -46,9 +46,13 @@ UICornerMain.CornerRadius = UDim.new(0, 12)
 UICornerMain.Parent = MainFrame
 
 -- Thanh bên (Sidebar chứa các Tab)
-local Sidebar = Instance.new("Frame")
+local Sidebar = Instance.new("ScrollingFrame")
 Sidebar.Size = UDim2.new(0, 100, 1, 0)
 Sidebar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Sidebar.BorderSizePixel = 0
+Sidebar.ScrollBarThickness = 3
+Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Sidebar.CanvasSize = UDim2.new(0, 0, 0, 0)
 Sidebar.Parent = MainFrame
 
 local UICornerSide = Instance.new("UICorner")
@@ -109,6 +113,8 @@ local function createTab(name)
     corner.Parent = tabBtn
 
     local page = Instance.new("ScrollingFrame")
+    page.BorderSizePixel = 0
+    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
     page.Size = UDim2.new(1, 0, 1, 0)
     page.BackgroundTransparency = 1
     page.Visible = false
@@ -121,10 +127,6 @@ local function createTab(name)
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
     listLayout.Padding = UDim.new(0, 8)
     listLayout.Parent = page
-
-    listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        page.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
-    end)
 
     pages[name] = {Button = tabBtn, Page = page}
 
@@ -322,6 +324,24 @@ createButton(movePage, "Teleport Đến Người Chơi", function()
                     break
                 end
             end
+        end
+    end
+end)
+
+-- Infinite Jump
+local infJumpConnection = nil
+createToggle(movePage, "Infinite Jump", function(active)
+    if active then
+        infJumpConnection = UserInputService.JumpRequest:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") then
+                char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end)
+    else
+        if infJumpConnection then
+            infJumpConnection:Disconnect()
+            infJumpConnection = nil
         end
     end
 end)
