@@ -881,45 +881,33 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================================================
--- NGĂN: TARGET (SỬA LỖI ĐIỆN THOẠI & ANTI-CHEAT)
+-- NGĂN: TARGET (TINHGỌN - SIÊU ĐƠN GIẢN)
 -- ================================================
 local targetPage = createTab("Target")
 
-local rawInputText = ""
-local currentTarget = nil
-local viewConnection = nil
+local targetBox = createTextBox(targetPage, "Nhập Tên / random", function() end)
 
--- Hàm lọc khoảng trắng
-local function trim(s)
-    return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
+-- Hàm tìm target trực tiếp từ Textbox
+local function getTarget()
+    local text = string.lower(targetBox.Text or "")
+    text = text:gsub("^%s*(.-)%s*$", "%1") -- Xóa khoảng trắng thừa
+    if text == "" then return nil end
 
--- Hàm tìm kiếm Target theo tên / random
-local function findTarget(inputText)
-    local cleaned = trim(inputText or "")
-    if cleaned == "" then return nil end
-    local lowerText = string.lower(cleaned)
+    local allPlayers = Players:GetPlayers()
 
-    -- Case 1: Nhập "random"
-    if lowerText == "random" then
-        local validPlayers = {}
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                table.insert(validPlayers, p)
-            end
+    -- Nếu gõ "random"
+    if text == "random" then
+        local others = {}
+        for _, p in ipairs(allPlayers) do
+            if p ~= LocalPlayer and p.Character then table.insert(others, p) end
         end
-        if #validPlayers > 0 then
-            return validPlayers[math.random(1, #validPlayers)]
-        end
-        return nil
+        return #others > 0 and others[math.random(1, #others)] or nil
     end
 
-    -- Case 2: Tìm theo tên Name / DisplayName
-    for _, p in ipairs(Players:GetPlayers()) do
+    -- Tìm theo Tên hoặc Display Name
+    for _, p in ipairs(allPlayers) do
         if p ~= LocalPlayer then
-            local pName = string.lower(p.Name)
-            local pDisplay = string.lower(p.DisplayName)
-            if string.find(pName, lowerText, 1, true) or string.find(pDisplay, lowerText, 1, true) then
+            if string.find(string.lower(p.Name), text, 1, true) or string.find(string.lower(p.DisplayName), text, 1, true) then
                 return p
             end
         end
@@ -927,73 +915,34 @@ local function findTarget(inputText)
     return nil
 end
 
--- 1. Textbox nhập chữ
-createTextBox(targetPage, "Nhập Tên / random", function(text)
-    rawInputText = text or ""
-end)
-
--- 2. Nút bấm Xác Nhận Target (Khắc phục lỗi bàn phím điện thoại)
-createButton(targetPage, "Chốt Target Đã Nhập", function()
-    currentTarget = findTarget(rawInputText)
-    if currentTarget then
-        print("Đã chọn Target: " .. currentTarget.Name)
-    end
-end)
-
--- 3. Nút Dịch chuyển (Dùng PivotTo chuẩn xác)
+-- 1. Nút Teleport
 createButton(targetPage, "Teleport đến Target", function()
-    -- Tự động quét lại nếu chưa bấm nút chốt
-    if not currentTarget or not currentTarget.Parent then
-        currentTarget = findTarget(rawInputText)
-    end
-
-    if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-        local myChar = LocalPlayer.Character
-        if myChar and myChar:FindFirstChild("HumanoidRootPart") then
-            -- Bắt buộc đứng dậy nếu đang ngồi
-            if myChar:FindFirstChild("Humanoid") then
-                myChar.Humanoid.Sit = false
-            end
-            
-            -- Dịch chuyển bằng PivotTo
-            local targetCFrame = currentTarget.Character.HumanoidRootPart.CFrame
-            myChar:PivotTo(targetCFrame * CFrame.new(0, 0, 3))
+    local target = getTarget()
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
         end
     end
 end)
 
--- 4. Toggle View góc nhìn (Khóa camera bền vững)
+-- 2. Toggle View
+local viewConn = nil
 createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
-    getgenv().IsViewActive = active
+    if viewConn then viewConn:Disconnect() viewConn = nil end
 
     if active then
-        if viewConnection then viewConnection:Disconnect() end
-
-        viewConnection = game:GetService("RunService").RenderStepped:Connect(function()
-            if getgenv().IsViewActive then
-                if not currentTarget or not currentTarget.Parent then
-                    currentTarget = findTarget(rawInputText)
-                end
-
-                if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") then
-                    workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-                    workspace.CurrentCamera.CameraSubject = currentTarget.Character.Humanoid
-                else
-                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-                        workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
-                    end
+        viewConn = game:GetService("RunService").RenderStepped:Connect(function()
+            local target = getTarget()
+            if target and target.Character and target.Character:FindFirstChild("Humanoid") then
+                workspace.CurrentCamera.CameraSubject = target.Character.Humanoid
+            else
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                    workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
                 end
             end
         end)
     else
-        if viewConnection then
-            viewConnection:Disconnect()
-            viewConnection = nil
-        end
-        -- Trả camera về bản thân
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
             workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
         end
     end
