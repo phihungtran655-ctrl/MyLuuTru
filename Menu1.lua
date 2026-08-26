@@ -864,9 +864,74 @@ end)
 local settingsPage = createTab("Settings")
 
 createButton(settingsPage, "Destroy Gui (Xoá Menu)", function()
-    fovCircle:Remove()
-    ScreenGui:Destroy()
+    if fovCircle then fovCircle:Remove() end
+    if ToggleMenuBtn then ToggleMenuBtn:Destroy() end
+    if ScreenGui then ScreenGui:Destroy() end
 end)
+
+createToggle(settingsPage, "Anti-AFK (Chống văng game)", function(active)
+    if active then
+        getgenv().AntiAfkConnection = LocalPlayer.Idled:Connect(function()
+            local VirtualUser = game:GetService("VirtualUser")
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new(0,0))
+        end)
+    else
+        if getgenv().AntiAfkConnection then
+            getgenv().AntiAfkConnection:Disconnect()
+            getgenv().AntiAfkConnection = nil
+        end
+    end
+end)
+
+local function autoExecuteOnTeleport()
+    local autoExecScript = [[
+        repeat task.wait() until game:IsLoaded()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/phihungtran655-ctrl/MyLuuTru/refs/heads/main/Menu1.lua"))()
+    ]]
+    local queueFunction = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
+    if queueFunction then
+        queueFunction(autoExecScript)
+    end
+end
+
+createButton(settingsPage, "Rejoin Server (Vào lại)", function()
+    autoExecuteOnTeleport()
+    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+end)
+
+createButton(settingsPage, "Server Hop (Đổi Server)", function()
+    autoExecuteOnTeleport()
+    local HttpService = game:GetService("HttpService")
+    local TeleportService = game:GetService("TeleportService")
+    local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/0?sortOrder=Asc&limit=100")).data
+    
+    for _, s in ipairs(servers) do
+        if s.id ~= game.JobId and s.playing < s.maxPlayers then
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, LocalPlayer)
+            break
+        end
+    end
+end)
+
+createButton(settingsPage, "Server Ít Người (Vắng nhất)", function()
+    autoExecuteOnTeleport()
+    local HttpService = game:GetService("HttpService")
+    local TeleportService = game:GetService("TeleportService")
+    local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/0?sortOrder=Asc&limit=100")).data
+    
+    table.sort(servers, function(a, b)
+        return a.playing < b.playing
+    end)
+    
+    for _, s in ipairs(servers) do
+        if s.id ~= game.JobId and s.playing > 0 and s.playing < s.maxPlayers then
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, LocalPlayer)
+            break
+        end
+    end
+end)
+
 
 -- Mặc định mở Tab Movement ban đầu
 pages["Movement"].Page.Visible = true
