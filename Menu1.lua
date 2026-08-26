@@ -971,7 +971,7 @@ createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
     end
 end)
 
--- 3. Toggle ESP Box Target (Dùng BoxHandleAdornment chuẩn xuyên tường)
+-- 3. Toggle ESP Box Target (Fix lỗi tự mất box khi di chuyển)
 local espConn = nil
 local currentBox = nil
 
@@ -1001,25 +1001,29 @@ createToggle(targetPage, "ESP Target (Hộp đỏ)", function(active)
             espTarget = getTarget()
         end
 
-        if espTarget and espTarget.Character then
-            local root = espTarget.Character:FindFirstChild("HumanoidRootPart") or espTarget.Character.PrimaryPart
-            if root then
-                -- Tạo BoxHandleAdornment (chuyên dụng vẽ hộp 3D đè lên mọi thứ)
-                local box = Instance.new("BoxHandleAdornment")
-                box.Name = "TargetESP_Box"
-                box.Color3 = Color3.fromRGB(255, 0, 0) -- Màu đỏ
-                box.Size = Vector3.new(4, 6, 4) -- Kích thước vừa vặn bao quanh nhân vật
-                box.AlwaysOnTop = true -- Luôn hiện xuyên tường 100%
-                box.ZIndex = 10
-                box.Transparency = 0.4 -- Độ trong suốt (0.4 để vẫn nhìn thấy nhân vật bên trong)
-                box.Adornee = root
-                box.Parent = root
-                currentBox = box
-            end
-        end
-
+        -- Vòng lặp liên tục giữ và tự gắn lại Box nếu target còn sống
         espConn = game:GetService("RunService").RenderStepped:Connect(function()
-            if not espTarget or not espTarget.Character or not espTarget.Character:FindFirstChild("HumanoidRootPart") then
+            if espTarget and espTarget.Character then
+                local root = espTarget.Character:FindFirstChild("HumanoidRootPart") or espTarget.Character.PrimaryPart
+                if root then
+                    -- Nếu chưa có Box hoặc Box bị rơi khỏi Target thì tạo/gắn lại ngay
+                    if not currentBox or currentBox.Parent ~= root then
+                        removeBox()
+                        local box = Instance.new("BoxHandleAdornment")
+                        box.Name = "TargetESP_Box"
+                        box.Color3 = Color3.fromRGB(255, 0, 0)
+                        box.Size = Vector3.new(4, 6, 4)
+                        box.AlwaysOnTop = true
+                        box.ZIndex = 10
+                        box.Transparency = 0.4
+                        box.Adornee = root
+                        box.Parent = root
+                        currentBox = box
+                    end
+                else
+                    removeBox()
+                end
+            else
                 removeBox()
             end
         end)
@@ -1027,6 +1031,7 @@ createToggle(targetPage, "ESP Target (Hộp đỏ)", function(active)
         removeBox()
     end
 end)
+
 
 -- ==========================================
 -- NGĂN 5: SETTINGS
