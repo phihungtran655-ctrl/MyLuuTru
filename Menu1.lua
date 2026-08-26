@@ -218,22 +218,43 @@ end
 -- ==========================================
 local movePage = createTab("Movement")
 
+-- Biến lưu trạng thái On/Off để tự nạp lại khi chết
+local isSpeedOn = false
+local isJumpOn = false
+
+-- Phần Speed
 local speedBox = createTextBox(movePage, "Nhập tốc độ (VD: 50)...")
 createToggle(movePage, "Toggle Speed", function(active)
+    isSpeedOn = active
     local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     if hum then
-        hum.WalkSpeed = active and (tonumber(speedBox.Text) or 16) or 16
+        hum.WalkSpeed = active and (tonumber(speedBox.Text) or 50) or 16
     end
 end)
 
+-- Phần Jump
 local jumpBox = createTextBox(movePage, "Nhập lực nhảy (VD: 100)...")
 createToggle(movePage, "Toggle Jump", function(active)
+    isJumpOn = active
     local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     if hum then
         hum.UseJumpPower = true
-        hum.JumpPower = active and (tonumber(jumpBox.Text) or 50) or 50
+        hum.JumpPower = active and (tonumber(jumpBox.Text) or 100) or 50
     end
 end)
+
+-- Tự động bật lại chỉ số Speed/Jump khi chết hồi sinh
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+    local hum = newCharacter:WaitForChild("Humanoid")
+    if isSpeedOn then
+        hum.WalkSpeed = tonumber(speedBox.Text) or 50
+    end
+    if isJumpOn then
+        hum.UseJumpPower = true
+        hum.JumpPower = tonumber(jumpBox.Text) or 100
+    end
+end)
+
 
 local singlePlatform = nil
 createToggle(movePage, "AirWalk (Sàn Cố Định)", function(active)
