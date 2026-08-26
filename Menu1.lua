@@ -971,12 +971,10 @@ createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
     end
 end)
 
--- 3. Toggle ESP Box Target (Hộp đỏ chuẩn SelectionBox)
+-- 3. Toggle ESP Box Target (Đã fix lag + hiện xuyên tường chuẩn)
 local espConn = nil
-local espTarget = nil
 local currentBox = nil
 
--- Hàm xóa hộp đỏ
 local function removeBox()
     if currentBox then
         currentBox:Destroy()
@@ -992,7 +990,7 @@ createToggle(targetPage, "ESP Target (Hộp đỏ)", function(active)
         local text = string.lower(targetBox.Text or "")
         text = text:gsub("^%s*(.-)%s*$", "%1")
 
-        -- Chọn 1 người ngẫu nhiên nếu gõ random
+        local espTarget = nil
         if text == "random" then
             local others = {}
             for _, p in ipairs(Players:GetPlayers()) do
@@ -1003,26 +1001,28 @@ createToggle(targetPage, "ESP Target (Hộp đỏ)", function(active)
             espTarget = getTarget()
         end
 
-        -- Vòng lặp bám theo tạo Hộp đỏ
+        -- Nếu tìm thấy target, tạo duy nhất 1 Box đỏ gắn vào HumanoidRootPart
+        if espTarget and espTarget.Character then
+            local root = espTarget.Character:FindFirstChild("HumanoidRootPart") or espTarget.Character.PrimaryPart
+            if root then
+                local box = Instance.new("SelectionBox")
+                box.Name = "TargetESP_Box"
+                box.Color3 = Color3.fromRGB(255, 0, 0)
+                box.LineThickness = 0.05
+                box.AlwaysOnTop = true
+                box.Adornee = root -- Gắn trực tiếp vào Part chính của nhân vật
+                box.Parent = root
+                currentBox = box
+            end
+        end
+
+        -- Vòng lặp chỉ dùng để kiểm tra nếu Target chết hoặc thoát game thì xóa Box (không tạo lại liên tục)
         espConn = game:GetService("RunService").RenderStepped:Connect(function()
-            if espTarget and espTarget.Character then
-                if not currentBox or currentBox.Parent ~= espTarget.Character then
-                    removeBox()
-                    local box = Instance.new("SelectionBox")
-                    box.Name = "TargetESP_SelectionBox"
-                    box.Color3 = Color3.fromRGB(255, 0, 0) -- Màu đỏ tươi
-                    box.LineThickness = 0.05 -- Độ dày nét hộp
-                    box.AlwaysOnTop = true
-                    box.Adornee = espTarget.Character
-                    box.Parent = espTarget.Character
-                    currentBox = box
-                end
-            else
+            if not espTarget or not espTarget.Character or not espTarget.Character:FindFirstChild("HumanoidRootPart") then
                 removeBox()
             end
         end)
     else
-        espTarget = nil
         removeBox()
     end
 end)
