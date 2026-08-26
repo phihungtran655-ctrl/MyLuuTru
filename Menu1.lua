@@ -881,25 +881,26 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================================================
--- NGĂN: TARGET (Quản Lý Mục Tiêu - TỐI ƯU HOÀN CHỈNH)
+-- NGĂN: TARGET (SỬA LỖI ĐIỆN THOẠI & ANTI-CHEAT)
 -- ================================================
 local targetPage = createTab("Target")
 
-local targetInputText = ""
+local rawInputText = ""
+local currentTarget = nil
 local viewConnection = nil
 
--- Hàm lọc bỏ khoảng trắng thừa ở đầu/cuối chuỗi
+-- Hàm lọc khoảng trắng
 local function trim(s)
-    return s:match("^%s*(.-)%s*$")
+    return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
--- Hàm tìm người chơi realtime
-local function getTargetPlayer()
-    local cleanedText = trim(targetInputText)
-    if cleanedText == "" then return nil end
-    local lowerText = string.lower(cleanedText)
-    
-    -- Xử lý trường hợp nhập "random"
+-- Hàm tìm kiếm Target theo tên / random
+local function findTarget(inputText)
+    local cleaned = trim(inputText or "")
+    if cleaned == "" then return nil end
+    local lowerText = string.lower(cleaned)
+
+    -- Case 1: Nhập "random"
     if lowerText == "random" then
         local validPlayers = {}
         for _, p in ipairs(Players:GetPlayers()) do
@@ -913,7 +914,7 @@ local function getTargetPlayer()
         return nil
     end
 
-    -- Tìm theo tên tài khoản hoặc Display Name (chấp nhận khớp một phần)
+    -- Case 2: Tìm theo tên Name / DisplayName
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then
             local pName = string.lower(p.Name)
@@ -926,34 +927,57 @@ local function getTargetPlayer()
     return nil
 end
 
--- 1. Textbox nhập tên Target
+-- 1. Textbox nhập chữ
 createTextBox(targetPage, "Nhập Tên / random", function(text)
-    targetInputText = text or ""
+    rawInputText = text or ""
 end)
 
--- 2. Nút Dịch chuyển đến Target
+-- 2. Nút bấm Xác Nhận Target (Khắc phục lỗi bàn phím điện thoại)
+createButton(targetPage, "Chốt Target Đã Nhập", function()
+    currentTarget = findTarget(rawInputText)
+    if currentTarget then
+        print("Đã chọn Target: " .. currentTarget.Name)
+    end
+end)
+
+-- 3. Nút Dịch chuyển (Dùng PivotTo chuẩn xác)
 createButton(targetPage, "Teleport đến Target", function()
-    local target = getTargetPlayer()
-    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+    -- Tự động quét lại nếu chưa bấm nút chốt
+    if not currentTarget or not currentTarget.Parent then
+        currentTarget = findTarget(rawInputText)
+    end
+
+    if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart") then
+        local myChar = LocalPlayer.Character
+        if myChar and myChar:FindFirstChild("HumanoidRootPart") then
+            -- Bắt buộc đứng dậy nếu đang ngồi
+            if myChar:FindFirstChild("Humanoid") then
+                myChar.Humanoid.Sit = false
+            end
+            
+            -- Dịch chuyển bằng PivotTo
+            local targetCFrame = currentTarget.Character.HumanoidRootPart.CFrame
+            myChar:PivotTo(targetCFrame * CFrame.new(0, 0, 3))
         end
     end
 end)
 
--- 3. Toggle View góc nhìn Target
+-- 4. Toggle View góc nhìn (Khóa camera bền vững)
 createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
+    getgenv().IsViewActive = active
+
     if active then
-        getgenv().IsViewActive = true
-        
         if viewConnection then viewConnection:Disconnect() end
-        
+
         viewConnection = game:GetService("RunService").RenderStepped:Connect(function()
             if getgenv().IsViewActive then
-                local target = getTargetPlayer()
-                if target and target.Character and target.Character:FindFirstChild("Humanoid") then
+                if not currentTarget or not currentTarget.Parent then
+                    currentTarget = findTarget(rawInputText)
+                end
+
+                if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") then
                     workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-                    workspace.CurrentCamera.CameraSubject = target.Character.Humanoid
+                    workspace.CurrentCamera.CameraSubject = currentTarget.Character.Humanoid
                 else
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                         workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
@@ -963,12 +987,11 @@ createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
             end
         end)
     else
-        getgenv().IsViewActive = false
         if viewConnection then
             viewConnection:Disconnect()
             viewConnection = nil
         end
-        -- Trả lại góc nhìn mặc định cho nhân vật mình
+        -- Trả camera về bản thân
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
             workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
