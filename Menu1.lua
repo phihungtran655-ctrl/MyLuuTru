@@ -1012,6 +1012,7 @@ createToggle(targetPage, "ESP Target (Hộp đỏ)", function(active)
                     box.Name = "TargetESP_SelectionBox"
                     box.Color3 = Color3.fromRGB(255, 0, 0) -- Màu đỏ tươi
                     box.LineThickness = 0.05 -- Độ dày nét hộp
+                    box.AlwaysOnTop = true
                     box.Adornee = espTarget.Character
                     box.Parent = espTarget.Character
                     currentBox = box
