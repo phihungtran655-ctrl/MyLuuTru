@@ -881,19 +881,25 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================================================
--- NGĂN: TARGET (Quản Lý Mục Tiêu - ĐÃ SỬA LỖI)
+-- NGĂN: TARGET (Quản Lý Mục Tiêu - TỐI ƯU HOÀN CHỈNH)
 -- ================================================
 local targetPage = createTab("Target")
 
 local targetInputText = ""
 local viewConnection = nil
 
--- Hàm tìm người chơi realtime chuẩn xác
+-- Hàm lọc bỏ khoảng trắng thừa ở đầu/cuối chuỗi
+local function trim(s)
+    return s:match("^%s*(.-)%s*$")
+end
+
+-- Hàm tìm người chơi realtime
 local function getTargetPlayer()
-    if not targetInputText or targetInputText == "" then return nil end
-    local lowerText = string.lower(targetInputText)
+    local cleanedText = trim(targetInputText)
+    if cleanedText == "" then return nil end
+    local lowerText = string.lower(cleanedText)
     
-    -- Nếu gõ "random"
+    -- Xử lý trường hợp nhập "random"
     if lowerText == "random" then
         local validPlayers = {}
         for _, p in ipairs(Players:GetPlayers()) do
@@ -907,7 +913,7 @@ local function getTargetPlayer()
         return nil
     end
 
-    -- Tìm theo tên tài khoản hoặc Display Name
+    -- Tìm theo tên tài khoản hoặc Display Name (chấp nhận khớp một phần)
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then
             local pName = string.lower(p.Name)
@@ -922,7 +928,7 @@ end
 
 -- 1. Textbox nhập tên Target
 createTextBox(targetPage, "Nhập Tên / random", function(text)
-    targetInputText = text
+    targetInputText = text or ""
 end)
 
 -- 2. Nút Dịch chuyển đến Target
@@ -935,21 +941,22 @@ createButton(targetPage, "Teleport đến Target", function()
     end
 end)
 
--- 3. Toggle View góc nhìn Target (Bền bỉ khi chết/respawn)
+-- 3. Toggle View góc nhìn Target
 createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
     if active then
         getgenv().IsViewActive = true
         
-        -- Dọn kết nối cũ nếu có
         if viewConnection then viewConnection:Disconnect() end
         
         viewConnection = game:GetService("RunService").RenderStepped:Connect(function()
             if getgenv().IsViewActive then
                 local target = getTargetPlayer()
                 if target and target.Character and target.Character:FindFirstChild("Humanoid") then
+                    workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
                     workspace.CurrentCamera.CameraSubject = target.Character.Humanoid
                 else
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
                         workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
                     end
                 end
@@ -961,13 +968,13 @@ createToggle(targetPage, "View Target (Xem góc nhìn)", function(active)
             viewConnection:Disconnect()
             viewConnection = nil
         end
-        -- Trả góc nhìn về bản thân
+        -- Trả lại góc nhìn mặc định cho nhân vật mình
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
             workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
         end
     end
 end)
-
 
 -- ==========================================
 -- NGĂN 5: SETTINGS
