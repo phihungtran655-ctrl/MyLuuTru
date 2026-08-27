@@ -1107,6 +1107,95 @@ createButton(settingsPage, "Server Ít Người (Vắng nhất)", function()
     end
 end)
 
+-- ==========================================
+-- COMMAND BAR & LOGIC XỬ LÝ LỆNH TẮT / BẬT
+-- ==========================================
+local commandBox = Instance.new("TextBox")
+commandBox.Name = "QuickCommandBar"
+commandBox.Size = UDim2.new(0, 240, 0, 35)
+commandBox.Position = UDim2.new(0.5, -120, 0.05, 0) -- Nằm trên cùng chính giữa
+commandBox.PlaceholderText = "Nhập lệnh (speed, fly, esp1...)"
+commandBox.Text = ""
+commandBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+commandBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+commandBox.BorderSizePixel = 2
+commandBox.BorderColor3 = Color3.fromRGB(255, 0, 0)
+commandBox.Visible = true
+commandBox.Parent = ScreenGui
+
+-- Xử lý logic gõ lệnh
+commandBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local cmd = string.lower(commandBox.Text):gsub("^%s*(.-)%s*$", "%1")
+        commandBox.Text = "" -- Xóa chữ sau khi Enter
+        
+        -- Speed
+        if cmd == "speed" then
+            if speedToggleState then speedToggleState(true) end
+        elseif cmd == "unspeed" then
+            if speedToggleState then speedToggleState(false) end
+            
+        -- Noclip
+        elseif cmd == "noclip" then
+            if noclipToggleState then noclipToggleState(true) end
+        elseif cmd == "clip" or cmd == "unnoclip" then
+            if noclipToggleState then noclipToggleState(false) end
+            
+        -- Aimbot (Hỗ trợ: ab / unab)
+        elseif cmd == "aimbot" or cmd == "ab" then
+            if aimbotToggleState then aimbotToggleState(true) end
+        elseif cmd == "unaimbot" or cmd == "unab" then
+            if aimbotToggleState then aimbotToggleState(false) end
+            
+        -- JumpPower (Hỗ trợ: jb / unjb)
+        elseif cmd == "jumppower" or cmd == "jp" or cmd == "jb" then
+            if jumpToggleState then jumpToggleState(true) end
+        elseif cmd == "unjumppower" or cmd == "unjp" or cmd == "unjb" then
+            if jumpToggleState then jumpToggleState(false) end
+            
+        -- Airwalk 1 - Sàn cố định (Hỗ trợ: aw1 / unaw1)
+        elseif cmd == "airwalk1" or cmd == "aw1" then
+            if airwalk1ToggleState then airwalk1ToggleState(true) end
+        elseif cmd == "unairwalk1" or cmd == "unaw1" then
+            if airwalk1ToggleState then airwalk1ToggleState(false) end
+            
+        -- Airwalk 2 - Sàn di động dưới chân (Hỗ trợ: aw2 / unaw2)
+        elseif cmd == "airwalk2" or cmd == "aw2" then
+            if airwalk2ToggleState then airwalk2ToggleState(true) end
+        elseif cmd == "unairwalk2" or cmd == "unaw2" then
+            if airwalk2ToggleState then airwalk2ToggleState(false) end
+            
+        -- Infinite Jump (Hỗ trợ: ij / unij)
+        elseif cmd == "infjump" or cmd == "ij" then
+            if infJumpToggleState then infJumpToggleState(true) end
+        elseif cmd == "uninfjump" or cmd == "unij" then
+            if infJumpToggleState then infJumpToggleState(false) end
+            
+        -- Fly
+        elseif cmd == "fly" then
+            if flyToggleState then flyToggleState(true) end
+        elseif cmd == "unfly" then
+            if flyToggleState then flyToggleState(false) end
+            
+        -- ESP 1 - Highlight
+        elseif cmd == "esp1" or cmd == "esp" then
+            if esp1ToggleState then esp1ToggleState(true) end
+        elseif cmd == "unesp1" or cmd == "unesp" then
+            if esp1ToggleState then esp1ToggleState(false) end
+            
+        -- ESP 2 - Hiện Tên
+        elseif cmd == "esp2" then
+            if esp2ToggleState then esp2ToggleState(true) end
+        elseif cmd == "unesp2" then
+            if esp2ToggleState then esp2ToggleState(false) end
+        end
+    end
+end)
+
+-- Toggle ẩn/hiện Command Bar trong Tab Settings
+createToggle(settingsPage, "Hiện Command Bar", function(active)
+    commandBox.Visible = active
+end)
 
 -- Mặc định mở Tab Movement ban đầu
 pages["Movement"].Page.Visible = true
