@@ -1107,14 +1107,16 @@ createButton(settingsPage, "Server Ít Người (Vắng nhất)", function()
     end
 end)
 
--- ==========================================
--- COMMAND BAR & LOGIC XỬ LÝ LỆNH TẮT / BẬT
--- ==========================================
+-- ==========================================================
+-- KHỐI COMMAND BAR CHUẨN DÀNH CHO MOBILE & TAB SETTINGS
+-- ==========================================================
+
+-- 1. Tạo ô nhập lệnh Command Bar trên ScreenGui
 local commandBox = Instance.new("TextBox")
 commandBox.Name = "QuickCommandBar"
 commandBox.Size = UDim2.new(0, 240, 0, 35)
-commandBox.Position = UDim2.new(0.5, -120, 0.05, 0) -- Nằm trên cùng chính giữa
-commandBox.PlaceholderText = "Nhập lệnh (speed, fly, esp1...)"
+commandBox.Position = UDim2.new(0.5, -120, 0.05, 0) -- Nằm chính giữa phía trên màn hình
+commandBox.PlaceholderText = "Nhập lệnh (speed, ij, fly...)"
 commandBox.Text = ""
 commandBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 commandBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -1123,67 +1125,74 @@ commandBox.BorderColor3 = Color3.fromRGB(255, 0, 0)
 commandBox.Visible = true
 commandBox.Parent = ScreenGui
 
--- Xử lý logic gõ lệnh
+-- 2. Logic xử lý lệnh (Đã tối ưu hóa chống kẹt phím/bàn phím ảo Mobile)
 commandBox.FocusLost:Connect(function(enterPressed)
     if enterPressed then
-        local cmd = string.lower(commandBox.Text):gsub("^%s*(.-)%s*$", "%1")
-        commandBox.Text = "" -- Xóa chữ sau khi Enter
+        -- Tự động lọc sạch khoảng trắng và đưa về chữ thường
+        local rawText = commandBox.Text or ""
+        local cmd = rawText:lower():gsub("%s+", "")
+        commandBox.Text = "" -- Clear khung nhập ngay lập tức
         
-        -- Speed
+        -- Ép nhả Focus bàn phím ảo để không bị kẹt phím nhảy/di chuyển trên điện thoại
+        game:GetService("UserInputService"):ClearFocusedTextBox()
+
+        -- --- HỆ THỐNG LỆNH ---
+        
+        -- Speed (Lệnh: speed / unspeed)
         if cmd == "speed" then
             if speedToggleState then speedToggleState(true) end
         elseif cmd == "unspeed" then
             if speedToggleState then speedToggleState(false) end
             
-        -- Noclip
+        -- Noclip (Lệnh: noclip / clip / unnoclip)
         elseif cmd == "noclip" then
             if noclipToggleState then noclipToggleState(true) end
         elseif cmd == "clip" or cmd == "unnoclip" then
             if noclipToggleState then noclipToggleState(false) end
             
-        -- Aimbot (Hỗ trợ: ab / unab)
+        -- Aimbot (Lệnh: aimbot, ab / unaimbot, unab)
         elseif cmd == "aimbot" or cmd == "ab" then
             if aimbotToggleState then aimbotToggleState(true) end
         elseif cmd == "unaimbot" or cmd == "unab" then
             if aimbotToggleState then aimbotToggleState(false) end
             
-        -- JumpPower (Hỗ trợ: jb / unjb)
+        -- JumpPower (Lệnh: jumppower, jp, jb / unjumppower, unjp, unjb)
         elseif cmd == "jumppower" or cmd == "jp" or cmd == "jb" then
             if jumpToggleState then jumpToggleState(true) end
         elseif cmd == "unjumppower" or cmd == "unjp" or cmd == "unjb" then
             if jumpToggleState then jumpToggleState(false) end
             
-        -- Airwalk 1 - Sàn cố định (Hỗ trợ: aw1 / unaw1)
+        -- Airwalk 1 - Sàn cố định (Lệnh: airwalk1, aw1 / unairwalk1, unaw1)
         elseif cmd == "airwalk1" or cmd == "aw1" then
             if airwalk1ToggleState then airwalk1ToggleState(true) end
         elseif cmd == "unairwalk1" or cmd == "unaw1" then
             if airwalk1ToggleState then airwalk1ToggleState(false) end
             
-        -- Airwalk 2 - Sàn di động dưới chân (Hỗ trợ: aw2 / unaw2)
+        -- Airwalk 2 - Sàn di động dưới chân (Lệnh: airwalk2, aw2 / unairwalk2, unaw2)
         elseif cmd == "airwalk2" or cmd == "aw2" then
             if airwalk2ToggleState then airwalk2ToggleState(true) end
         elseif cmd == "unairwalk2" or cmd == "unaw2" then
             if airwalk2ToggleState then airwalk2ToggleState(false) end
             
-        -- Infinite Jump (Hỗ trợ: ij / unij)
+        -- Infinite Jump (Lệnh: infjump, ij / uninfjump, unij)
         elseif cmd == "infjump" or cmd == "ij" then
             if infJumpToggleState then infJumpToggleState(true) end
         elseif cmd == "uninfjump" or cmd == "unij" then
             if infJumpToggleState then infJumpToggleState(false) end
             
-        -- Fly
+        -- Fly (Lệnh: fly / unfly)
         elseif cmd == "fly" then
             if flyToggleState then flyToggleState(true) end
         elseif cmd == "unfly" then
             if flyToggleState then flyToggleState(false) end
             
-        -- ESP 1 - Highlight
-        elseif cmd == "esp1" or cmd == "esp" then
+        -- ESP 1 - Highlight (Lệnh: esp1 / unesp1)
+        elseif cmd == "esp1" then
             if esp1ToggleState then esp1ToggleState(true) end
-        elseif cmd == "unesp1" or cmd == "unesp" then
+        elseif cmd == "unesp1" then
             if esp1ToggleState then esp1ToggleState(false) end
             
-        -- ESP 2 - Hiện Tên
+        -- ESP 2 - Hiện Tên (Lệnh: esp2 / unesp2)
         elseif cmd == "esp2" then
             if esp2ToggleState then esp2ToggleState(true) end
         elseif cmd == "unesp2" then
@@ -1192,7 +1201,7 @@ commandBox.FocusLost:Connect(function(enterPressed)
     end
 end)
 
--- Toggle ẩn/hiện Command Bar trong Tab Settings
+-- 3. Tạo Toggle trong Tab Settings để Ẩn/Hiện Command Bar
 createToggle(settingsPage, "Hiện Command Bar", function(active)
     commandBox.Visible = active
 end)
