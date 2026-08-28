@@ -444,6 +444,12 @@ function Chilli:NewTab(tabName)
 
     -- Input (Ô nhập liệu có tùy chọn executeOnEnter)
     function Tab:NewInput(placeholder, executeOnEnter, callback)
+        
+        if type(executeOnEnter) == "function" then
+        callback = executeOnEnter
+        executeOnEnter = true
+        end
+        
         callback = callback or function() end
 
         local InputFrame = Instance.new("Frame")
