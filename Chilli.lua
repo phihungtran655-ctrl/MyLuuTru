@@ -503,6 +503,44 @@ function Chilli:NewTab(tabName)
         return InputObj
     end
 
+    
+-- Label (Chữ tự động cập nhật theo thời gian)
+function Tab:NewText(titleText, getValueFunc)
+    local TextFrame = Instance.new("Frame")
+    TextFrame.Size = UDim2.new(1, -6, 0, 36)
+    TextFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    TextFrame.Parent = TabContent
+
+    local TextCorner = Instance.new("UICorner")
+    TextCorner.CornerRadius = UDim2.new(0, 8)
+    TextCorner.Parent = TextFrame
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -20, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = TextFrame
+
+    -- Kiểm tra nếu getValueFunc là một hàm thì tự động cập nhật mỗi frame
+    if type(getValueFunc) == "function" then
+        game:GetService("RunService").RenderStepped:Connect(function()
+            local success, val = pcall(getValueFunc)
+            if success then
+                Label.Text = titleText .. ": " .. tostring(val)
+            end
+        end)
+    else
+        -- Nếu chỉ truyền chữ/số cố định
+        Label.Text = titleText .. ": " .. tostring(getValueFunc or "")
+    end
+
+    return Label
+end
+
     return Tab
 end
 
