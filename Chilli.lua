@@ -503,7 +503,7 @@ function Chilli:NewTab(tabName)
         return InputObj
     end
 
-    -- Label (Chữ tự động cập nhật theo thời gian - Bản nâng cấp an toàn)
+    -- Label tự động cập nhật an toàn
 function Tab:NewText(titleText, getValueFunc)
     local TextFrame = Instance.new("Frame")
     TextFrame.Size = UDim2.new(1, -6, 0, 36)
@@ -522,7 +522,7 @@ function Tab:NewText(titleText, getValueFunc)
     Label.Font = Enum.Font.GothamMedium
     Label.TextSize = 13
     Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Text = titleText .. ": ..." -- Giá trị mặc định khi chưa load xong
+    Label.Text = titleText .. ": ..."
     Label.Parent = TextFrame
 
     if type(getValueFunc) == "function" then
